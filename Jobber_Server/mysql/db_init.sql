@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS JobCategories;
 
 CREATE TABLE Contractors (
     Id INT PRIMARY KEY AUTO_INCREMENT,
+    Guid CHAR(36) NOT NULL,
     FirstName VARCHAR(100) NOT NULL,
     LastName VARCHAR(100) NOT NULL,
     BioShort VARCHAR(255),
@@ -21,7 +22,7 @@ CREATE TABLE Contractors (
 
 CREATE TABLE JobCategories (
 	Id INT PRIMARY KEY AUTO_INCREMENT,
-    Name VARCHAR(64) UNIQUE
+    Name VARCHAR(64) UNIQUE,
 );
 CREATE INDEX index_id ON JobCategories(Id);
 CREATE INDEX index_name ON JobCategories(Name);

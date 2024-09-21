@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Jobber_Server.Models.Contractors;
 using Jobber_Server.MicroServices;
+using System.Runtime.CompilerServices;
 
 namespace Jobber_Server.Controllers 
 {
@@ -25,25 +26,41 @@ namespace Jobber_Server.Controllers
 
         // Create new contractor
         [HttpPost]
-        public ActionResult CreateContractor([FromForm] CreateContractorDto contractor) {
+        public ActionResult CreateContractor([FromForm] CreateContractorDto contractor) 
+        {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-            if(contractor.ProfilePicture != null) {
+            string profilePath = "";
+            if(contractor.ProfilePicture != null) 
+            {
                 SaveImageFile sif = new SaveImageFile(contractor.ProfilePicture);
-                if(sif.Error != null) {
+                if(sif.Error != null) 
+                {
                     return BadRequest("Exception: " + sif.Error);
-                }       
+                } else if(sif.Path != null)
+                {
+                    profilePath = sif.Path;
+                }
             }
-            if(contractor.Portfolio != null) {
-                foreach (IFormFile file in contractor.Portfolio) {
+
+            List<string> portfolioPaths = [];
+            if(contractor.Portfolio != null) 
+            {
+                foreach (IFormFile file in contractor.Portfolio) 
+                {
                     SaveImageFile sif = new SaveImageFile(file);
-                    if(sif.Error != null) {
+                    if(sif.Error != null) 
+                    {
                         return BadRequest("Exception: " + sif.Error);
+                    } else if(sif.Path != null) 
+                    {
+                        portfolioPaths.Add(sif.Path);
                     }
                 }
             }
+
             return Ok();
         }
 

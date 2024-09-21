@@ -5,6 +5,7 @@ namespace Jobber_Server.Models.Contractors
     public class Contractor
     {
         public required int Id { get; set; }
+        public required Guid Guid { get; set; }
         public required string FirstName { get; set; }
         public required string LastName { get; set; }
         public string? BioShort { get; set; }

@@ -4,6 +4,7 @@ namespace Jobber_Server.Models.Contractors
 {
     public record ContractorDto(
         int Id,
+        string Guid,
         string FirstName,
         string LastName,
         string? BioShort = null,
@@ -41,7 +42,7 @@ namespace Jobber_Server.Models.Contractors
 
     public record UpdateContractorDto(
         [Required(ErrorMessage = "Id is required.")]
-        int Id,
+        string Id,
 
         [StringLength(100, ErrorMessage = "First name cannot exceed 100 characters.")]
         string? FirstName,
