@@ -1,5 +1,3 @@
-using System.Formats.Asn1;
-
 namespace Jobber_Server.Models.Contractors
 {
     public static class ContractorExtensions
@@ -14,8 +12,8 @@ namespace Jobber_Server.Models.Contractors
                 LastName: contractor.LastName,
                 BioShort: contractor.BioShort,
                 BioLong: contractor.BioLong,
-                JobCategories: contractor.jobCategories,
-                Services: contractor.services,
+                JobCategories: contractor.ContractorJobCategories?.Select(contractorJobCategory => contractorJobCategory.JobCategory).ToList(),
+                Services: contractor.Services,
                 ServiceArea: contractor.ServiceArea,
                 ProfilePicture: contractor.ProfilePicture,
                 ProfilePictureThumbnail: contractor.ProfilePictureThumbnail,

@@ -9,17 +9,20 @@ namespace Jobber_Server.Models.Contractors
         string LastName,
         string? BioShort = null,
         string? BioLong = null,
-        JobCategory[]? JobCategories = null,
-        string[]? Services = null,
+        ICollection<JobCategory>? JobCategories = null,
+        ICollection<string>? Services = null,
         ServiceArea? ServiceArea = null,
         string? ProfilePicture = null,
         string? ProfilePictureThumbnail = null,
-        string[]? Portfolio = null,
-        string[]? PortfolioThumbnails = null
+        ICollection<string>? Portfolio = null,
+        ICollection<string>? PortfolioThumbnails = null
     );
 
 
     public record CreateContractorDto(
+        [Required]
+        Guid Guid,
+
         [Required(ErrorMessage = "First name is required.")]
         [StringLength(100, ErrorMessage = "First name cannot exceed 100 characters.")]
         string FirstName,
@@ -33,14 +36,17 @@ namespace Jobber_Server.Models.Contractors
 
         [StringLength(65535, ErrorMessage = "Long bio cannot exceed 65,535 characters.")]
         string? BioLong = null,
-        JobCategory[]? JobCategories = null,
-        string[]? Services = null,
+        ICollection<int>? JobCategoryIds = null,
+        ICollection<string>? Services = null,
         ServiceArea? ServiceArea = null,
         IFormFile? ProfilePicture = null,
-        IFormFile[]? Portfolio = null
+        ICollection<IFormFile>? Portfolio = null
     );
 
     public record UpdateContractorDto(
+        [Required]
+        Guid Guid,
+
         [Required(ErrorMessage = "Id is required.")]
         string Id,
 
@@ -56,11 +62,11 @@ namespace Jobber_Server.Models.Contractors
         [StringLength(65535, ErrorMessage = "Long bio cannot exceed 65,535 characters.")]
         string? BioLong,
 
-        JobCategory[]? JobCategories,
-        string[]? Services,
+        ICollection<int>? JobCategoryIds,
+        ICollection<string>? Services,
 
         ServiceArea? ServiceArea,
-        byte[]? ProfilePicture,
-        byte[][]? Portfolio
+        IFormFile? ProfilePicture,
+        ICollection<IFormFile>? Portfolio
     );
 }

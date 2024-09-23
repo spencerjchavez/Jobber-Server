@@ -17,12 +17,12 @@ CREATE TABLE Contractors (
     ProfilePicture VARCHAR(255),
     ProfilePictureThumbnail VARCHAR(255),
     Portfolio VARCHAR(255),
-    PortfolioThumbnail VARCHAR(255)
+    PortfolioThumbnails VARCHAR(255)
 );
 
 CREATE TABLE JobCategories (
 	Id INT PRIMARY KEY AUTO_INCREMENT,
-    Name VARCHAR(64) UNIQUE,
+    Name VARCHAR(64) UNIQUE
 );
 CREATE INDEX index_id ON JobCategories(Id);
 CREATE INDEX index_name ON JobCategories(Name);

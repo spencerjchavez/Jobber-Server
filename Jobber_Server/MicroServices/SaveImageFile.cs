@@ -7,7 +7,7 @@ namespace Jobber_Server.MicroServices
 {
     class SaveImageFile {
         
-        public string? Path { get; }
+        public Uri? Uri { get; }
         public string? Error { get; }
 
 
@@ -34,7 +34,7 @@ namespace Jobber_Server.MicroServices
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     file.CopyTo(stream);
-                    Path = filePath; 
+                    Uri = new UriBuilder("http", "127.0.0.1", 5253, filePath).Uri; 
                 }
 
                 return;

@@ -1,8 +1,9 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Jobber_Server.DBContext;
 using Microsoft.OpenApi.Models;
+using Microsoft.EntityFrameworkCore;
+using System.Configuration;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.FileProviders;
 
 namespace Jobber_Server
 {
@@ -21,10 +22,21 @@ namespace Jobber_Server
                 });
     }
 
-    public class Startup
+    public class Startup(IConfiguration configuration)
     {
+
+        private readonly IConfiguration _configuration = configuration;
+
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddDbContext<JobberDbContext>(options =>
+                options.UseMySql(
+                    _configuration.GetConnectionString("DefaultConnection"),
+                    new MySqlServerVersion(new Version()),
+                    mysqlOptions => mysqlOptions.EnableRetryOnFailure()
+                )
+            );
+
             services.AddControllers(); // Adds services required for API controllers
 
             services.AddSwaggerGen(c =>
@@ -55,6 +67,13 @@ namespace Jobber_Server
             
             app.UseRouting();
 
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                    Path.Combine(Directory.GetCurrentDirectory(), "assets")),
+                RequestPath = "/assets"
+            });
+            
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
