@@ -49,6 +49,9 @@ namespace Jobber_Server.Controllers
             {
                 return BadRequest(ModelState);
             }
+            // TODO: Add Authorization here
+
+
             Uri? profileUri = null;
             if(contractor.ProfilePicture != null) 
             {
@@ -108,10 +111,80 @@ namespace Jobber_Server.Controllers
         }
 
         // Update contractor
+        [HttpPut]
+        public ActionResult UpdateContractor(UpdateContractorDto contractorUpdated) 
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            
+            var contractor = _dbContext.Contractors.Find(contractorUpdated.Id);
+            if(contractor == null) {
+                return NotFound("Contractor Id not found");
+            }
+            // TODO: add authorization here
 
+            
+
+            if(contractorUpdated.ProfilePicture != null) 
+            {
+                SaveImageFile sif = new SaveImageFile(contractorUpdated.ProfilePicture);
+                if(sif.Error != null) 
+                {
+                    return BadRequest("Exception: " + sif.Error);
+                } else if(sif.Uri != null)
+                {
+                    contractor.ProfilePicture = sif.Uri.ToString();
+                }
+            }
+
+            if(contractorUpdated.Portfolio != null) 
+            {
+                contractor.Port
+                foreach (IFormFile file in contractor.Portfolio) 
+                {
+                    SaveImageFile sif = new SaveImageFile(file);
+                    if(sif.Error != null) 
+                    {
+                        return BadRequest("Exception: " + sif.Error);
+                    } else if(sif.Uri != null) 
+                    {
+                        portfolioUris.Add(sif.Uri);
+                    }
+                }
+            }
+
+            var contractorModel = new Contractor
+            {
+                Guid = contractor.Guid,
+                FirstName = contractor.FirstName,
+                LastName = contractor.LastName,
+                BioShort = contractor.BioShort,
+                BioLong = contractor.BioLong,
+                ContractorJobCategories = contractor.JobCategoryIds?.Select(jobCategoryId => 
+                {
+                    var jobCategory = _dbContext.JobCategories.Find(jobCategoryId) ?? throw new Exception("Invalid job category received");
+                    return new ContractorJobCategory
+                    { 
+                        JobCategoryId = jobCategory.Id,
+                        JobCategory = jobCategory
+                    };
+                }).ToList() ?? new List<ContractorJobCategory>(),
+                Services = contractor.Services,
+                ServiceArea = contractor.ServiceArea,
+                ProfilePicture = profileUri?.ToString(),
+                ProfilePictureThumbnail = profileUri?.ToString(),
+                Portfolio = portfolioUris.Select(uri => uri.ToString()).ToList(),
+                PortfolioThumbnails = portfolioUris.Select(uri => uri.ToString()).ToList(),
+            };
+            _dbContext.Contractors.Add(contractorModel);
+            _dbContext.SaveChanges();
+
+            return Ok();
+        }
 
         // Delete contractor
-
 
     }
 }
