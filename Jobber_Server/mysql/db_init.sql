@@ -16,8 +16,8 @@ CREATE TABLE Contractors (
     ServiceArea JSON,
     ProfilePicture VARCHAR(255),
     ProfilePictureThumbnail VARCHAR(255),
-    Portfolio VARCHAR(255),
-    PortfolioThumbnails VARCHAR(255)
+    Portfolio JSON,
+    PortfolioThumbnails JSON
 );
 
 CREATE TABLE JobCategories (

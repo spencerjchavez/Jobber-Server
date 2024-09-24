@@ -141,7 +141,7 @@ namespace Jobber_Server.Controllers
 
             if(contractorUpdated.Portfolio != null) 
             {
-                contractor.Port
+                contractor
                 foreach (IFormFile file in contractor.Portfolio) 
                 {
                     SaveImageFile sif = new SaveImageFile(file);
@@ -184,7 +184,15 @@ namespace Jobber_Server.Controllers
             return Ok();
         }
 
+
+        [HttpPut("{id}/portfolio")]
+        public ActionResult UpdatePortfolio(string[] portfolioUris) //need full-res and thumbnail images
+        {
+            // replace contractor portfolio with these new Uris
+        }
+
         // Delete contractor
 
     }
+
 }
