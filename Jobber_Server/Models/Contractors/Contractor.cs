@@ -1,7 +1,9 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Jobber_Server.Models.Images;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace Jobber_Server.Models.Contractors
@@ -36,20 +38,12 @@ namespace Jobber_Server.Models.Contractors
         public string? ProfilePicture { get; set; }
         public string? ProfilePictureThumbnail { get; set; }
         [NotMapped]
-        public ICollection<string>? Portfolio { get; set; }
+        public ICollection<ImagesDto>? Portfolio { get; set; }
         [Column("Portfolio")]
         public string? PortfolioJson
         {
             get => JsonSerializer.Serialize(Portfolio);
-            set => Portfolio = value == null ? null : JsonSerializer.Deserialize<string[]>(value);
-        }
-        [NotMapped]
-        public ICollection<string>? PortfolioThumbnails { get; set; }
-        [Column("PortfolioThumbnails")]
-        public string? PortfolioThumbnailsJson
-        {
-            get => JsonSerializer.Serialize(PortfolioThumbnails);
-            set => PortfolioThumbnails = value == null ? null : JsonSerializer.Deserialize<string[]>(value);
+            set => Portfolio = value == null ? null : JsonSerializer.Deserialize<ICollection<ImagesDto>>(value);
         }
     }
 }

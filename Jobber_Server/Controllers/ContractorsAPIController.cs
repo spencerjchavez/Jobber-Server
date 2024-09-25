@@ -1,11 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Jobber_Server.Models.Contractors;
 using Jobber_Server.MicroServices;
-using System.Runtime.CompilerServices;
 using Jobber_Server.DBContext;
 using Microsoft.EntityFrameworkCore;
 using Jobber_Server.Models;
-using System.Collections.ObjectModel;
 
 namespace Jobber_Server.Controllers 
 {
@@ -23,7 +21,7 @@ namespace Jobber_Server.Controllers
             var contractor = _dbContext.Contractors
                 .Include(contractor => contractor.ContractorJobCategories)
                 .ThenInclude(contractorJobCategories => contractorJobCategories.JobCategory)
-                .Where(contractor => contractor.Id == id).FirstOrDefault();
+                .FirstOrDefault(contractor => contractor.Id == id);
             if(contractor == null)
             {
                 return NotFound("No contractor found");
@@ -51,7 +49,6 @@ namespace Jobber_Server.Controllers
             }
             // TODO: Add Authorization here
 
-
             Uri? profileUri = null;
             if(contractor.ProfilePicture != null) 
             {
@@ -65,21 +62,7 @@ namespace Jobber_Server.Controllers
                 }
             }
 
-            List<Uri> portfolioUris = [];
-            if(contractor.Portfolio != null) 
-            {
-                foreach (IFormFile file in contractor.Portfolio) 
-                {
-                    SaveImageFile sif = new SaveImageFile(file);
-                    if(sif.Error != null) 
-                    {
-                        return BadRequest("Exception: " + sif.Error);
-                    } else if(sif.Uri != null) 
-                    {
-                        portfolioUris.Add(sif.Uri);
-                    }
-                }
-            }
+            var jobCategoryIds = new HashSet<int>();
 
             var contractorModel = new Contractor
             {
@@ -90,6 +73,10 @@ namespace Jobber_Server.Controllers
                 BioLong = contractor.BioLong,
                 ContractorJobCategories = contractor.JobCategoryIds?.Select(jobCategoryId => 
                 {
+                    if(!jobCategoryIds.Add(jobCategoryId)) // ensure no duplicate jobCategory Ids
+                    {
+                        throw new Exception("Duplicate job category received");
+                    }
                     var jobCategory = _dbContext.JobCategories.Find(jobCategoryId) ?? throw new Exception("Invalid job category received");
                     return new ContractorJobCategory
                     { 
@@ -101,8 +88,7 @@ namespace Jobber_Server.Controllers
                 ServiceArea = contractor.ServiceArea,
                 ProfilePicture = profileUri?.ToString(),
                 ProfilePictureThumbnail = profileUri?.ToString(),
-                Portfolio = portfolioUris.Select(uri => uri.ToString()).ToList(),
-                PortfolioThumbnails = portfolioUris.Select(uri => uri.ToString()).ToList(),
+                Portfolio = contractor.Portfolio,
             };
             _dbContext.Contractors.Add(contractorModel);
             _dbContext.SaveChanges();
@@ -119,7 +105,9 @@ namespace Jobber_Server.Controllers
                 return BadRequest(ModelState);
             }
             
-            var contractor = _dbContext.Contractors.Find(contractorUpdated.Id);
+            var contractor = _dbContext.Contractors
+                .Include(contractor => contractor.ContractorJobCategories)
+                .FirstOrDefault(contractor => contractor.Id == contractorUpdated.Id);
             if(contractor == null) {
                 return NotFound("Contractor Id not found");
             }
@@ -139,60 +127,49 @@ namespace Jobber_Server.Controllers
                 }
             }
 
-            if(contractorUpdated.Portfolio != null) 
+            var contractorJobCategoriesToRemove = new HashSet<ContractorJobCategory>(contractor.ContractorJobCategories);
+            var contractorJobCategories = contractorUpdated.JobCategoryIds?.Select(jobCategoryId => 
             {
-                contractor
-                foreach (IFormFile file in contractor.Portfolio) 
-                {
-                    SaveImageFile sif = new SaveImageFile(file);
-                    if(sif.Error != null) 
-                    {
-                        return BadRequest("Exception: " + sif.Error);
-                    } else if(sif.Uri != null) 
-                    {
-                        portfolioUris.Add(sif.Uri);
-                    }
-                }
+                contractorJobCategoriesToRemove.RemoveWhere(toRemove => toRemove.JobCategoryId == jobCategoryId);
+                var jobCategory = _dbContext.JobCategories.Find(jobCategoryId) ?? throw new Exception("Invalid job category received");
+                return new ContractorJobCategory
+                { 
+                    JobCategoryId = jobCategory.Id,
+                    JobCategory = jobCategory
+                };
+            }).ToList() ?? new List<ContractorJobCategory>();
+
+            foreach(ContractorJobCategory contractorJobCategory in contractorJobCategoriesToRemove)
+            {
+                _dbContext.ContractorJobCategories.Remove(contractorJobCategory);
             }
 
-            var contractorModel = new Contractor
-            {
-                Guid = contractor.Guid,
-                FirstName = contractor.FirstName,
-                LastName = contractor.LastName,
-                BioShort = contractor.BioShort,
-                BioLong = contractor.BioLong,
-                ContractorJobCategories = contractor.JobCategoryIds?.Select(jobCategoryId => 
-                {
-                    var jobCategory = _dbContext.JobCategories.Find(jobCategoryId) ?? throw new Exception("Invalid job category received");
-                    return new ContractorJobCategory
-                    { 
-                        JobCategoryId = jobCategory.Id,
-                        JobCategory = jobCategory
-                    };
-                }).ToList() ?? new List<ContractorJobCategory>(),
-                Services = contractor.Services,
-                ServiceArea = contractor.ServiceArea,
-                ProfilePicture = profileUri?.ToString(),
-                ProfilePictureThumbnail = profileUri?.ToString(),
-                Portfolio = portfolioUris.Select(uri => uri.ToString()).ToList(),
-                PortfolioThumbnails = portfolioUris.Select(uri => uri.ToString()).ToList(),
-            };
-            _dbContext.Contractors.Add(contractorModel);
-            _dbContext.SaveChanges();
+            contractor.BioShort = contractorUpdated.BioShort;
+            contractor.BioLong = contractorUpdated.BioLong;
+            contractor.ContractorJobCategories = contractorJobCategories;
+            contractor.Portfolio = contractorUpdated.Portfolio;
+            contractor.ServiceArea = contractorUpdated.ServiceArea;
+            contractor.Services = contractorUpdated.Services;
 
+            _dbContext.SaveChanges();
             return Ok();
         }
 
-
-        [HttpPut("{id}/portfolio")]
-        public ActionResult UpdatePortfolio(string[] portfolioUris) //need full-res and thumbnail images
-        {
-            // replace contractor portfolio with these new Uris
-        }
-
         // Delete contractor
+        [HttpDelete("{id}")]
+        public ActionResult DeleteContractor(int id)
+        {
+            var contractor = _dbContext.Contractors.FirstOrDefault(contractor => contractor.Id == id);
+            if(contractor == null)
+            {
+                return NotFound("No contractor found with that Id");
+            }
+            // TODO: add authorization here
 
+            _dbContext.Remove(contractor);
+            _dbContext.SaveChanges();
+            return Ok();
+        }
     }
 
 }

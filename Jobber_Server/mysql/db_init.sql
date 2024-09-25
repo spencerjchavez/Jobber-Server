@@ -16,8 +16,7 @@ CREATE TABLE Contractors (
     ServiceArea JSON,
     ProfilePicture VARCHAR(255),
     ProfilePictureThumbnail VARCHAR(255),
-    Portfolio JSON,
-    PortfolioThumbnails JSON
+    Portfolio JSON
 );
 
 CREATE TABLE JobCategories (
@@ -32,7 +31,7 @@ CREATE TABLE ContractorJobCategories (
     JobCategoryId INT NOT NULL,
     PRIMARY KEY (ContractorId, JobCategoryId),
 	FOREIGN KEY (ContractorId) REFERENCES Contractors(Id) ON DELETE CASCADE,
-    FOREIGN KEY (JobCategoryId) REFERENCES JobCategories(Id) ON DELETE CASCADE
+    FOREIGN KEY (JobCategoryId) REFERENCES JobCategories(Id) ON DELETE RESTRICT
 );
 CREATE INDEX index_contractor ON ContractorJobCategories (ContractorId);
 CREATE INDEX index_jobcategory ON ContractorJobCategories (JobCategoryId);

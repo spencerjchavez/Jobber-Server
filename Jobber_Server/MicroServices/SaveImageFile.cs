@@ -1,4 +1,5 @@
 
+using Jobber_Server.Assets;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
@@ -34,7 +35,7 @@ namespace Jobber_Server.MicroServices
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     file.CopyTo(stream);
-                    Uri = new UriBuilder("http", "127.0.0.1", 5253, filePath).Uri; 
+                    Uri = new UriBuilder("http", Constants.HOST, Constants.PORT, filePath).Uri; 
                 }
 
                 return;

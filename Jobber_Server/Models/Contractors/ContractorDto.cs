@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Jobber_Server.Models.Images;
 
 namespace Jobber_Server.Models.Contractors
 {
@@ -14,8 +15,7 @@ namespace Jobber_Server.Models.Contractors
         ServiceArea? ServiceArea = null,
         string? ProfilePicture = null,
         string? ProfilePictureThumbnail = null,
-        ICollection<string>? Portfolio = null,
-        ICollection<string>? PortfolioThumbnails = null
+        ICollection<ImagesDto>? Portfolio = null
     );
 
 
@@ -40,7 +40,7 @@ namespace Jobber_Server.Models.Contractors
         ICollection<string>? Services = null,
         ServiceArea? ServiceArea = null,
         IFormFile? ProfilePicture = null,
-        ICollection<IFormFile>? Portfolio = null
+        ICollection<ImagesDto>? Portfolio = null
     );
 
     public record UpdateContractorDto(
@@ -48,7 +48,7 @@ namespace Jobber_Server.Models.Contractors
         Guid Guid,
 
         [Required(ErrorMessage = "Id is required.")]
-        string Id,
+        int Id,
 
         [StringLength(100, ErrorMessage = "First name cannot exceed 100 characters.")]
         string? FirstName,
@@ -67,6 +67,6 @@ namespace Jobber_Server.Models.Contractors
 
         ServiceArea? ServiceArea,
         IFormFile? ProfilePicture,
-        ICollection<IFormFile>? Portfolio
+        ICollection<ImagesDto>? Portfolio
     );
 }
