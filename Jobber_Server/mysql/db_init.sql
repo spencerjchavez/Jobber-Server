@@ -1,5 +1,7 @@
 USE jobberDB;
 
+DROP TABLE IF EXISTS SectorsContractors;
+DROP TABLE IF EXISTS Sectors;
 DROP TABLE IF EXISTS ContractorJobCategories;
 DROP TABLE IF EXISTS Contractors;
 DROP TABLE IF EXISTS JobCategories;
@@ -14,8 +16,7 @@ CREATE TABLE Contractors (
     BioLong TEXT,
     Services JSON,
     ServiceArea JSON,
-    ProfilePicture VARCHAR(255),
-    ProfilePictureThumbnail VARCHAR(255),
+    ProfilePicture JSON,
     Portfolio JSON
 );
 
@@ -35,3 +36,23 @@ CREATE TABLE ContractorJobCategories (
 );
 CREATE INDEX index_contractor ON ContractorJobCategories (ContractorId);
 CREATE INDEX index_jobcategory ON ContractorJobCategories (JobCategoryId);
+
+-- GeoLocating Contractors
+CREATE TABLE Sectors(
+	LatitudinalSlice SMALLINT NOT NULL,
+    LatitudinalSubSlice SMALLINT NOT NULL,
+    LongitudinalSlice SMALLINT NOT NULL,
+    PRIMARY KEY(LatitudinalSlice, LatitudinalSubSlice, LongitudinalSlice)
+);
+
+CREATE TABLE SectorContractors(
+	LatitudinalSlice SMALLINT NOT NULL,
+    LatitudinalSubSlice SMALLINT NOT NULL,
+    LongitudinalSlice SMALLINT NOT NULL,
+    ContractorId INT NOT NULL,
+    PRIMARY KEY(LatitudinalSlice, LatitudinalSubSlice, LongitudinalSlice, ContractorId),
+    FOREIGN KEY (LatitudinalSlice, LatitudinalSubSlice, LongitudinalSlice) 
+		REFERENCES Sectors(LatitudinalSlice, LatitudinalSubSlice, LongitudinalSlice) 
+        ON DELETE RESTRICT,
+    FOREIGN KEY (ContractorId) REFERENCES Contractors(Id) ON DELETE CASCADE
+);

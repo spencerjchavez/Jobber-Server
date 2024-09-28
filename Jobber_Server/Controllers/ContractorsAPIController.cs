@@ -34,8 +34,11 @@ namespace Jobber_Server.Controllers
         // Get many Contractors by location and other filters
         // TODO: put limits on radius and implement pagination of results to ease server resources
         [HttpPost("page")]
-        public ActionResult<ICollection<ContractorDto>> GetContractors(int page, double latitude, double longitude, double radius, [FromBody] int[] jobTypes)
+        public ActionResult<ICollection<ContractorDto>> GetContractors(int page, double latitude, double longitude, [FromBody] int[] jobTypes)
         {
+            // get all contractors that service this location
+            var contractors =_dbContext.Contractors;
+            
             return Ok(new List<ContractorDto> {});
         }
 
@@ -50,18 +53,6 @@ namespace Jobber_Server.Controllers
             // TODO: Add Authorization here
 
             Uri? profileUri = null;
-            if(contractor.ProfilePicture != null) 
-            {
-                SaveImageFile sif = new SaveImageFile(contractor.ProfilePicture);
-                if(sif.Error != null) 
-                {
-                    return BadRequest("Exception: " + sif.Error);
-                } else if(sif.Uri != null)
-                {
-                    profileUri = sif.Uri;
-                }
-            }
-
             var jobCategoryIds = new HashSet<int>();
 
             var contractorModel = new Contractor
@@ -86,14 +77,13 @@ namespace Jobber_Server.Controllers
                 }).ToList() ?? new List<ContractorJobCategory>(),
                 Services = contractor.Services,
                 ServiceArea = contractor.ServiceArea,
-                ProfilePicture = profileUri?.ToString(),
-                ProfilePictureThumbnail = profileUri?.ToString(),
+                ProfilePicture = contractor.ProfilePicture,
                 Portfolio = contractor.Portfolio,
             };
-            _dbContext.Contractors.Add(contractorModel);
+            var contractorEntity = _dbContext.Contractors.Add(contractorModel);
             _dbContext.SaveChanges();
 
-            return Ok();
+            return Ok(contractorEntity.Entity);
         }
 
         // Update contractor
@@ -112,20 +102,6 @@ namespace Jobber_Server.Controllers
                 return NotFound("Contractor Id not found");
             }
             // TODO: add authorization here
-
-            
-
-            if(contractorUpdated.ProfilePicture != null) 
-            {
-                SaveImageFile sif = new SaveImageFile(contractorUpdated.ProfilePicture);
-                if(sif.Error != null) 
-                {
-                    return BadRequest("Exception: " + sif.Error);
-                } else if(sif.Uri != null)
-                {
-                    contractor.ProfilePicture = sif.Uri.ToString();
-                }
-            }
 
             var contractorJobCategoriesToRemove = new HashSet<ContractorJobCategory>(contractor.ContractorJobCategories);
             var contractorJobCategories = contractorUpdated.JobCategoryIds?.Select(jobCategoryId => 
@@ -147,6 +123,7 @@ namespace Jobber_Server.Controllers
             contractor.BioShort = contractorUpdated.BioShort;
             contractor.BioLong = contractorUpdated.BioLong;
             contractor.ContractorJobCategories = contractorJobCategories;
+            contractor.ProfilePicture = contractorUpdated.ProfilePicture;
             contractor.Portfolio = contractorUpdated.Portfolio;
             contractor.ServiceArea = contractorUpdated.ServiceArea;
             contractor.Services = contractorUpdated.Services;
@@ -171,5 +148,4 @@ namespace Jobber_Server.Controllers
             return Ok();
         }
     }
-
 }

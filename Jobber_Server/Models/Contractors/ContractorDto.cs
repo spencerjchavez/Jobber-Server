@@ -13,11 +13,9 @@ namespace Jobber_Server.Models.Contractors
         ICollection<JobCategory>? JobCategories = null,
         ICollection<string>? Services = null,
         ServiceArea? ServiceArea = null,
-        string? ProfilePicture = null,
-        string? ProfilePictureThumbnail = null,
+        ImagesDto? ProfilePicture = null,
         ICollection<ImagesDto>? Portfolio = null
     );
-
 
     public record CreateContractorDto(
         [Required]
@@ -39,7 +37,7 @@ namespace Jobber_Server.Models.Contractors
         ICollection<int>? JobCategoryIds = null,
         ICollection<string>? Services = null,
         ServiceArea? ServiceArea = null,
-        IFormFile? ProfilePicture = null,
+        ImagesDto? ProfilePicture = null,
         ICollection<ImagesDto>? Portfolio = null
     );
 
@@ -66,7 +64,7 @@ namespace Jobber_Server.Models.Contractors
         ICollection<string>? Services,
 
         ServiceArea? ServiceArea,
-        IFormFile? ProfilePicture,
+        ImagesDto? ProfilePicture,
         ICollection<ImagesDto>? Portfolio
     );
 }

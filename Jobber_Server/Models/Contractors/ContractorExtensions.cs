@@ -16,9 +16,7 @@ namespace Jobber_Server.Models.Contractors
                 Services: contractor.Services,
                 ServiceArea: contractor.ServiceArea,
                 ProfilePicture: contractor.ProfilePicture,
-                ProfilePictureThumbnail: contractor.ProfilePictureThumbnail,
-                Portfolio: contractor.Portfolio,
-                PortfolioThumbnails: contractor.PortfolioThumbnails
+                Portfolio: contractor.Portfolio
             );
         }
     }

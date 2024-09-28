@@ -35,8 +35,7 @@ namespace Jobber_Server.Models.Contractors
             get =>  JsonSerializer.Serialize(ServiceArea);
             set => ServiceArea = value == null ? null : JsonSerializer.Deserialize<ServiceArea>(value);
         }
-        public string? ProfilePicture { get; set; }
-        public string? ProfilePictureThumbnail { get; set; }
+        public ImagesDto? ProfilePicture { get; set; }
         [NotMapped]
         public ICollection<ImagesDto>? Portfolio { get; set; }
         [Column("Portfolio")]

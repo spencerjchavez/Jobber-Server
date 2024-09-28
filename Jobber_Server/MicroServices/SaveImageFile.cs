@@ -1,14 +1,12 @@
 
 using Jobber_Server.Assets;
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Threading.Tasks;
-
+using System.Drawing;
 namespace Jobber_Server.MicroServices
 {
     class SaveImageFile {
         
-        public Uri? Uri { get; }
+        public Uri? ImageUri { get; }
+        public Uri? ImageThumbnailUri { get; }
         public string? Error { get; }
 
 
@@ -28,16 +26,34 @@ namespace Jobber_Server.MicroServices
                     Error = $"File type {fileExtension} is not supported";
                     return;
                 }
-                string fileName = $"{Guid.NewGuid()}{fileExtension}";
-                string filePath = System.IO.Path.Combine("assets/images/", fileName);
+                var guid = Guid.NewGuid();
+                string fileName = $"{guid}{fileExtension}";
+                string filePath = System.IO.Path.Combine("Assets/Images/", fileName);
 
                 // Save the file to the specified path
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     file.CopyTo(stream);
-                    Uri = new UriBuilder("http", Constants.HOST, Constants.PORT, filePath).Uri; 
+                    ImageUri = new UriBuilder("http", Constants.HOST, Constants.PORT, filePath).Uri;
                 }
 
+                // TODO: Create and save thumbnail image ()
+                /*
+                var thumbnailFileName = $"{guid}_thumbnail{fileExtension}";
+                var thumbnailFilePath = System.IO.Path.Combine("Assets/Images/", fileName);
+                using(var stream = file.OpenReadStream())
+                {
+                    var image = Image.FromStream(stream);
+
+                }
+            
+                using (var stream = new FileStream(thumbnailFilePath, FileMode.Create))
+                {
+                    thumbnailFile.CopyTo(stream);
+                    ImageUri = new UriBuilder("http", Constants.HOST, Constants.PORT, thumbnailFilePath).Uri; 
+                }
+                */
+                ImageThumbnailUri = ImageUri;
                 return;
             }
             catch (Exception ex)

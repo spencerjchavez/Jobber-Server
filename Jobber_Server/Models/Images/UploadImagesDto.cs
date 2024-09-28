@@ -1,5 +1,5 @@
 
 public record UploadImagesDto
 {
-    public IFormFile[] images { get; set; }
+    public ICollection<IFormFile> Images { get; set; } = new List<IFormFile>();
 }
