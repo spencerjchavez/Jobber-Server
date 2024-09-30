@@ -39,6 +39,9 @@ namespace Jobber_Server.Controllers
             // get all contractors that service this location
             var contractors =_dbContext.Contractors;
             
+            var LatitudinalSlice = ;
+
+            
             return Ok(new List<ContractorDto> {});
         }
 
