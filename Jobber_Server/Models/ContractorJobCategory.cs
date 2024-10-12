@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Jobber_Server.Models {
     
     [PrimaryKey(nameof(ContractorId), nameof(JobCategoryId))]
-    public record ContractorJobCategory 
+    public class ContractorJobCategory 
     {
         public int ContractorId { get; set; }
 

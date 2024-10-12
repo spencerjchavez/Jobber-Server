@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace Jobber_Server.Models {
-    public record JobCategory 
+    public class JobCategory 
     {
         public required int Id { get; set; }
         public required string Name { get; set; }

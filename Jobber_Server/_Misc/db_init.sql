@@ -1,6 +1,6 @@
 USE jobberDB;
 
-DROP TABLE IF EXISTS SectorsContractors;
+DROP TABLE IF EXISTS SectorContractors;
 DROP TABLE IF EXISTS Sectors;
 DROP TABLE IF EXISTS ContractorJobCategories;
 DROP TABLE IF EXISTS Contractors;
@@ -37,22 +37,36 @@ CREATE TABLE ContractorJobCategories (
 CREATE INDEX index_contractor ON ContractorJobCategories (ContractorId);
 CREATE INDEX index_jobcategory ON ContractorJobCategories (JobCategoryId);
 
--- GeoLocating Contractors
+-- Tree Structure Sectors Table
 CREATE TABLE Sectors(
-	LatitudinalSlice SMALLINT NOT NULL,
-    LatitudinalSubSlice SMALLINT NOT NULL,
-    LongitudinalSlice SMALLINT NOT NULL,
-    PRIMARY KEY(LatitudinalSlice, LatitudinalSubSlice, LongitudinalSlice)
+	Id INT PRIMARY KEY AUTO_INCREMENT,
+    Latitude DOUBLE NOT NULL,
+    Longitude DOUBLE NOT NULL,
+    Depth INT NOT NULL,
+    NW INT,
+    NE INT,
+    SE INT,
+    SW INT,
+    Parent INT,
+    FOREIGN KEY (NW) REFERENCES Sectors(Id) ON DELETE SET NULL,
+    FOREIGN KEY (NE) REFERENCES Sectors(Id) ON DELETE SET NULL,
+    FOREIGN KEY (SE) REFERENCES Sectors(Id) ON DELETE SET NULL,
+    FOREIGN KEY (SW) REFERENCES Sectors(Id) ON DELETE SET NULL,
+    FOREIGN KEY (Parent) REFERENCES Sectors(Id) ON DELETE RESTRICT
 );
+CREATE INDEX index_parent ON Sectors(Parent);
 
-CREATE TABLE SectorContractors(
-	LatitudinalSlice SMALLINT NOT NULL,
-    LatitudinalSubSlice SMALLINT NOT NULL,
-    LongitudinalSlice SMALLINT NOT NULL,
+INSERT INTO Sectors (Id, Latitude, Longitude, Depth) VALUES (1, 0, -90, 0);
+INSERT INTO Sectors (Id, Latitude, Longitude, Depth) VALUES (2, 0, 90, 0);
+
+CREATE TABLE ContractorSectors(
+	SectorId INT NOT NULL,
     ContractorId INT NOT NULL,
-    PRIMARY KEY(LatitudinalSlice, LatitudinalSubSlice, LongitudinalSlice, ContractorId),
-    FOREIGN KEY (LatitudinalSlice, LatitudinalSubSlice, LongitudinalSlice) 
-		REFERENCES Sectors(LatitudinalSlice, LatitudinalSubSlice, LongitudinalSlice) 
+    PRIMARY KEY(SectorId, ContractorId),
+    FOREIGN KEY (SectorId) 
+		REFERENCES Sectors(Id) 
         ON DELETE RESTRICT,
     FOREIGN KEY (ContractorId) REFERENCES Contractors(Id) ON DELETE CASCADE
 );
+CREATE INDEX index_sector ON ContractorSectors(SectorId);
+CREATE INDEX index_contractor ON ContractorSectors(ContractorId);

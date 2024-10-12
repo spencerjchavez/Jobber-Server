@@ -1,7 +1,7 @@
 
 using Jobber_Server.Assets;
 using System.Drawing;
-namespace Jobber_Server.Utils
+namespace Jobber_Server.Services.Utils
 {
     class SaveImageFile {
         

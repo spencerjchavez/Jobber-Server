@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;
+using Jobber_Server.Services.Contractors;
+using Jobber_Server.Services.Contractors.Sectors;
 
 namespace Jobber_Server
 {
@@ -29,6 +31,7 @@ namespace Jobber_Server
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddExceptionHandler<ExceptionHandler>();
             services.AddDbContext<JobberDbContext>(options =>
                 options.UseMySql(
                     _configuration.GetConnectionString("DefaultConnection"),
@@ -37,6 +40,9 @@ namespace Jobber_Server
                 )
             );
 
+            services.AddScoped<IContractorService, ContractorService>();
+            services.AddScoped<ISectorServiceInternal, SectorServiceInternal>();
+            
             services.AddControllers(); // Adds services required for API controllers
 
             services.AddSwaggerGen(c =>
