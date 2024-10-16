@@ -22,24 +22,13 @@ namespace Jobber_Server.Models.Contractors.Sector
 
         public virtual ICollection<ContractorSector> ContractorSectors { get; set; } = null!;
 
-        public double GetWidth() {
-            return 180.0 / Math.Pow(2, Depth);
-        }
+        public double Width() => 180.0 / Math.Pow(2, Depth);
+        
 
-        public bool HasChildren() { return NE != null; }
-        public double LatitudeNorth() { return Latitude + GetWidth() / 2; }
-        public double LatitudeSouth() { return Latitude - GetWidth() / 2; }
-        public double LongitudeWest() { return Longitude - GetWidth() / 2; }
-        public double LongitudeEast() { return Longitude + GetWidth() / 2; }
-
-        public bool IntersectsServiceArea(ServiceArea serviceArea)
-        {
-                var latClosest = Math.Max(LatitudeSouth(), Math.Min(serviceArea.Latitude, LatitudeNorth()));
-                var lonClosest = Math.Max(LongitudeWest(), Math.Min(serviceArea.Longitude, LongitudeEast()));
-                var dLat = latClosest - serviceArea.Latitude;
-                var dLon = lonClosest - serviceArea.Longitude;
-                var sectorInServiceArea = Math.Sqrt(dLat * dLat + dLon * dLon) * 6378 <= serviceArea.Radius;
-                return sectorInServiceArea;
-        }
+        public bool HasChildren() => NE != null;
+        public double LatitudeNorth() => Latitude + Width() / 2; 
+        public double LatitudeSouth() => Latitude - Width() / 2; 
+        public double LongitudeWest() => Longitude - Width() / 2; 
+        public double LongitudeEast() =>  Longitude + Width() / 2; 
     }
 }

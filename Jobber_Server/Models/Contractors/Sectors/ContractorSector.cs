@@ -8,6 +8,7 @@ namespace Jobber_Server.Models.Contractors.Sector
     {
         public int SectorId { get; set; }
         public int ContractorId { get; set; }
+        public bool ServesEntireSector { get; set; }
                 
         [JsonIgnore]
         public virtual Contractor Contractor { get; set; } = null!;

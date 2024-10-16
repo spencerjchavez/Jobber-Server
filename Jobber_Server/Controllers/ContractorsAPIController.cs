@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Jobber_Server.Models.Contractors;
 using Jobber_Server.Services.Contractors;
 using Jobber_Server.Models;
-using Org.BouncyCastle.Asn1.Cms;
 
 namespace Jobber_Server.Controllers 
 {
@@ -19,23 +18,42 @@ namespace Jobber_Server.Controllers
         {
             var random = new Random(0);
             Console.WriteLine("Starting Test");
+            var chunkTimes = new List<double>();
+            var chunkSize = 200;
             var start = DateTime.Now;
-            for(var i = 0; i < 10000; i++)
+            for(var chunk = 0; chunk < 100; chunk++)
             {
-                CreateContractor(new CreateContractorDto(
-                    new Guid(),
-                    "Test" + i,
-                    "Test" + i,
-                    ServiceArea: new ServiceArea {
-                        //Latitude = (180 * random.NextDouble()) - 90,
-                        //Longitude = (360 * random.NextDouble()) - 180,
-                        Latitude = 0 + random.NextDouble(),
-                        Longitude = -90 + random.NextDouble(),
-                        Radius = 2.5,
-                    }
-                ));
+                var chunkStart = DateTime.Now;
+                for(var i = 0; i < chunkSize; i++)
+                {
+                    CreateContractor(new CreateContractorDto(
+                        new Guid(),
+                        "Test" + i,
+                        "Test" + i,
+                        ServiceArea: new ServiceArea {
+                            Latitude = (180 * random.NextDouble()) - 90,
+                            Longitude = (360 * random.NextDouble()) - 180,
+                            //Latitude = 0 + random.NextDouble(),
+                            //Longitude = -90 + random.NextDouble(),
+                            Radius = 50,
+                        }
+                    ));
+                }
+                chunkTimes.Add(DateTime.Now.Subtract(chunkStart).TotalSeconds);
+            }
+            string filePath = System.IO.Path.Combine("_Misc/", "metrics.csv");
+            using (var stream = new StreamWriter(filePath))
+            {
+                stream.WriteLine("Contractors Added, Time Taken");
+                var contractorsAdded = chunkSize;
+                foreach(var chunkTime in chunkTimes)
+                {
+                    stream.WriteLine(contractorsAdded + "," + chunkTime);
+                    contractorsAdded += chunkSize;
+                }
             }
             Console.WriteLine($"Finished in {DateTime.Now.Subtract(start).TotalSeconds} seconds");
+
             return Ok();
         }
         

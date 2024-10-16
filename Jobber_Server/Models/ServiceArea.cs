@@ -1,3 +1,5 @@
+using Jobber_Server.Models.Contractors.Sector;
+
 namespace Jobber_Server.Models {
     public record ServiceArea 
     {
@@ -7,7 +9,27 @@ namespace Jobber_Server.Models {
 
         public bool Contains(double latitude, double longitude)
         {
-            return Math.Sqrt(Math.Pow(latitude - Latitude, 2) + Math.Pow(longitude - Longitude, 2)) * 6378 <= Radius;
+            var latDistanceKm = (Latitude - latitude) * Math.PI / 180 * 6378;
+            var lonDistanceKm = (Longitude - longitude) * Math.PI / 180 * 6378 * Math.Cos(Latitude * Math.PI / 180);
+            return Math.Sqrt(latDistanceKm * latDistanceKm + lonDistanceKm * lonDistanceKm) <= Radius;
+        }
+
+        public bool ServesEntireSector(Sector sector)
+        {
+            return Contains(sector.LatitudeNorth(), sector.LongitudeWest()) &&
+                    Contains(sector.LatitudeNorth(), sector.LongitudeEast()) &&
+                    Contains(sector.LatitudeSouth(), sector.LongitudeEast()) &&
+                    Contains(sector.LatitudeSouth(), sector.LongitudeWest());   
+        }
+
+        public bool ServesSector(Sector sector)
+        {
+                var latClosest = Math.Max(sector.LatitudeSouth(), Math.Min(Latitude, sector.LatitudeNorth()));
+                var lonClosest = Math.Max(sector.LongitudeWest(), Math.Min(Longitude, sector.LongitudeEast()));
+                var latDistanceKm = (latClosest - Latitude) * Math.PI / 180 * 6378;
+                var lonDistanceKm = (lonClosest - Longitude) * Math.PI / 180 * 6378 * Math.Cos(latClosest * Math.PI / 180);
+                var sectorInServiceArea = Math.Sqrt(latDistanceKm * latDistanceKm + lonDistanceKm * lonDistanceKm) <= Radius;
+                return sectorInServiceArea;
         }
     }
 }

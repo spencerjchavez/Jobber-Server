@@ -1,6 +1,6 @@
 USE jobberDB;
 
-DROP TABLE IF EXISTS SectorContractors;
+DROP TABLE IF EXISTS ContractorSectors;
 DROP TABLE IF EXISTS Sectors;
 DROP TABLE IF EXISTS ContractorJobCategories;
 DROP TABLE IF EXISTS Contractors;
@@ -62,6 +62,7 @@ INSERT INTO Sectors (Id, Latitude, Longitude, Depth) VALUES (2, 0, 90, 0);
 CREATE TABLE ContractorSectors(
 	SectorId INT NOT NULL,
     ContractorId INT NOT NULL,
+    ServesEntireSector BOOL NOT NULL,
     PRIMARY KEY(SectorId, ContractorId),
     FOREIGN KEY (SectorId) 
 		REFERENCES Sectors(Id) 
