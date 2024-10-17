@@ -1,8 +1,10 @@
+using System.ComponentModel.DataAnnotations;
 using Jobber_Server.DBContext;
 using Jobber_Server.Models;
 using Jobber_Server.Models.Contractors;
 using Jobber_Server.Models.Contractors.Sector;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Net.Http.Headers;
 
 namespace Jobber_Server.Services.Contractors.Sectors
@@ -22,81 +24,115 @@ namespace Jobber_Server.Services.Contractors.Sectors
             var contractorLon = contractor.ServiceArea.Longitude;
             var contractorRadius = contractor.ServiceArea.Radius;
 
-            ISet<int> addContractorToSector(int sectorId, bool servesEntireSector = false)
-            {
-                var sector = _dbContext.Sectors.Where(s => s.Id == sectorId).FirstOrDefault() ?? throw new Exception($"Couldn't find sector of id {sectorId}");
- 
+            // returns list of contractor sectors to add to database along with a reference to the object's sector
+            List<ContractorSector> createContractorSectors(int sectorId, bool servesEntireSector = false)
+            { 
+                var sector = _dbContext.Sectors.Where(s => s.Id == sectorId).FirstOrDefault() ?? throw new Exception($"Couldn't find sector with id {sectorId}");
                 if(!servesEntireSector)
                 {
-                    if(!contractor.ServiceArea.ServesSector(sector))
+                    if(!contractor.ServiceArea!.ServesSector(sector))
                     {
-                        return new HashSet<int>();
+                        return [];
                     }
                     servesEntireSector = contractor.ServiceArea.ServesEntireSector(sector);                         
                 }
 
                 if(sector.HasChildren())
                 {
-                    var sectorIds = new HashSet<int>();
-                    sectorIds.UnionWith(addContractorToSector(sector.NE ?? -1, servesEntireSector));
-                    sectorIds.UnionWith(addContractorToSector(sector.NW ?? -1, servesEntireSector));
-                    sectorIds.UnionWith(addContractorToSector(sector.SW ?? -1, servesEntireSector));
-                    sectorIds.UnionWith(addContractorToSector(sector.SE ?? -1, servesEntireSector));
-                    return sectorIds;
+                    var contractorSectors = new List<ContractorSector>();
+                    contractorSectors.AddRange(createContractorSectors(sector.NEId ?? -1, servesEntireSector));
+                    contractorSectors.AddRange(createContractorSectors(sector.NWId ?? -1, servesEntireSector));
+                    contractorSectors.AddRange(createContractorSectors(sector.SWId ?? -1, servesEntireSector));
+                    contractorSectors.AddRange(createContractorSectors(sector.SEId ?? -1, servesEntireSector));
+                    return contractorSectors;
                 } else {
-                    _dbContext.ContractorSectors.Add(new ContractorSector{
+                    var cs = new ContractorSector {
                         SectorId = sector.Id,
                         ContractorId = contractor.Id,
-                        ServesEntireSector = servesEntireSector
-                    });
-                    return new HashSet<int>{sector.Id};
+                        ServesEntireSector = servesEntireSector,
+                        Sector = sector
+                    };
+                    return [cs];
                 }
             }
 
-            var sectorIds = new HashSet<int>();
+            var contractorSectorsToAdd = new List<ContractorSector>();
+
             if(contractorLon - contractorRadius / 6378 < 0) 
             {
                 //western hemisphere
-                var s =_dbContext.Sectors.Where(s => s.Id == 1).FirstOrDefault() ?? throw new Exception("Couldn't get head sector");
-                sectorIds.UnionWith(addContractorToSector(s.Id));
+                contractorSectorsToAdd.AddRange(createContractorSectors(1));
             }
             if(contractorLon + contractorRadius / 6378 >= 0)
             {
                 // eastern hemisphere
-                var s =_dbContext.Sectors.Where(s => s.Id == 2).FirstOrDefault() ?? throw new Exception("Couldn't get head sector");
-                sectorIds.UnionWith(addContractorToSector(s.Id));
+                contractorSectorsToAdd.AddRange(createContractorSectors(2));
             }
+            _dbContext.ContractorSectors.AddRange(contractorSectorsToAdd);
             _dbContext.SaveChanges();
 
-            var contractorSectorsFiltered = _dbContext.ContractorSectors.Where(cs => sectorIds.Contains(cs.SectorId) && !cs.ServesEntireSector);
-            var contractorsPerSector = new Dictionary<int, int>();
-            foreach(var cs in contractorSectorsFiltered)
+            // prepare to split sectors
+            var sectorsAddedTo = new List<Sector>(contractorSectorsToAdd.Select(cs => cs.Sector));
+            var sectorIdsAddedTo = sectorsAddedTo.Select(s => s.Id);
+            var contractorsInSector = _dbContext.ContractorSectors
+                .Where(cs => sectorIdsAddedTo.Contains(cs.SectorId))
+                .ToList() ?? new List<ContractorSector>();
+
+            var numContractorsNotServingEntireSector = new Dictionary<int, int>();
+            var contractorsBySectorId = new Dictionary<int, List<ContractorSector>>();
+            var sectorsById = new Dictionary<int, Sector>();
+            foreach(var cs in contractorsInSector)
             {
-                if(!contractorsPerSector.TryGetValue(cs.SectorId, out int count))
+                if(!cs.ServesEntireSector)
                 {
-                    count = 0;
+                    if(!numContractorsNotServingEntireSector.TryGetValue(cs.Sector.Id, out int count))
+                    {
+                        count = 0;
+                    }
+                    numContractorsNotServingEntireSector[cs.Sector.Id] = count + 1;
                 }
-                contractorsPerSector[cs.SectorId] = count + 1;
+                sectorsById[cs.Sector.Id] = cs.Sector;
+                if(!contractorsBySectorId.TryGetValue(cs.SectorId, out List<ContractorSector>? contractorsInInnerSector))
+                {
+                    contractorsBySectorId[cs.SectorId] = new List<ContractorSector>();
+                }
+                contractorsBySectorId[cs.SectorId].Add(cs);
             }
-            foreach(KeyValuePair<int, int> kvp in contractorsPerSector)
+            
+            var sectorsToSplit = new List<Sector>();
+            var contractorSectorsToSplit = new List<List<ContractorSector>>();
+            foreach(KeyValuePair<int, int> kvp in numContractorsNotServingEntireSector)
             {
                 if(kvp.Value >= 100) {
-                    SplitSector(kvp.Key);
+                    sectorsToSplit.Add(sectorsById[kvp.Key]);
+                    contractorSectorsToSplit.Add(contractorsBySectorId[kvp.Key]);
                 }
             }
+
+            SplitSectors(sectorsToSplit, contractorSectorsToSplit);
+
             _dbContext.SaveChanges();
         }
 
         public ICollection<Contractor> GetContractors(double latitude, double longitude)
         {
-            var sector = _dbContext.Sectors.Where(s => s.Id == (longitude < 0 ? 1 : 2)).FirstOrDefault() ?? throw new Exception("Couldn't get head sector");
+            var sector = _dbContext.Sectors
+                .Where(s => s.Id == (longitude < 0 ? 1 : 2))
+                .Include(s => s.NE)
+                .Include(s => s.NW)
+                .Include(s => s.SE)
+                .Include(s => s.SW)
+                .FirstOrDefault() ?? throw new Exception("Couldn't get head sector");
             
+            // TODO: Change this
             while (sector.HasChildren())
             {
                 var isWest = longitude < sector.Longitude;
                 var isSouth = latitude < sector.Latitude;
-                var childSectorId = isWest ? (isSouth ? sector.SW : sector.NW) : (isSouth ? sector.SE : sector.NE);
-                sector = _dbContext.Sectors.Where(s => s.Id == childSectorId).FirstOrDefault() ?? throw new Exception($"Couldn't find sector of id {childSectorId}");
+                var childSector = isWest ? (isSouth ? sector.SW! : sector.NW!) : (isSouth ? sector.SE! : sector.NE!);
+                sector = _dbContext.Sectors
+                    .Where(s => s.Id == childSector.Id) // do includes for child sectors
+                    .FirstOrDefault() ?? throw new Exception($"Couldn't find sector of id {childSector.Id}");
             }
 
             var contractorSectors = _dbContext.ContractorSectors
@@ -107,64 +143,66 @@ namespace Jobber_Server.Services.Contractors.Sectors
             return contractorSectors.Select(cs => cs.Contractor).ToList() ?? new List<Contractor>();
         }
 
-        private void SplitSector(int sectorId)
+        // doesn't save changes to database
+        private void SplitSectors(IList<Sector> sectors, List<List<ContractorSector>> associatedContractorSectors)
         {
-            var sector = _dbContext.Sectors
-            .Where(s => s.Id == sectorId)
-            .FirstOrDefault() ?? throw new Exception($"Couldn't find sectorId {sectorId}");
-
-            if(sector.Depth > 11) // ensures we don't split a sector whose width < 5km
+            var sectorsToAddWithContractorSectors = new List<Sector>();
+            for(int i = 0; i < sectors.Count(); i++)
             {
-                return;
+                var sector = sectors[i];
+                var contractorSectors = associatedContractorSectors[i];
+                
+                if(sector.Depth > 11) // ensures we don't split a sector whose width < 5km
+                {
+                    continue;
+                }
+
+                var childCoordinateOffset = sector.Width() / 4;
+                var nw = new Sector{
+                    Latitude = sector.Latitude + childCoordinateOffset,
+                    Longitude = sector.Longitude - childCoordinateOffset,
+                    Depth = sector.Depth + 1,
+                    Parent = sector
+                };
+                var ne = new Sector{
+                    Latitude = sector.Latitude + childCoordinateOffset,
+                    Longitude = sector.Longitude + childCoordinateOffset,
+                    Depth = sector.Depth + 1,
+                    Parent = sector
+                };
+                var se = new Sector{
+                    Latitude = sector.Latitude - childCoordinateOffset,
+                    Longitude = sector.Longitude + childCoordinateOffset,
+                    Depth = sector.Depth + 1,
+                    Parent = sector
+                };
+                var sw = new Sector{
+                    Latitude = sector.Latitude - childCoordinateOffset,
+                    Longitude = sector.Longitude - childCoordinateOffset,
+                    Depth = sector.Depth + 1,
+                    Parent = sector
+                };
+
+                ne.ContractorSectors = splitContractorSectors(contractorSectors, ne);
+                nw.ContractorSectors = splitContractorSectors(contractorSectors, nw);
+                se.ContractorSectors = splitContractorSectors(contractorSectors, se);
+                sw.ContractorSectors = splitContractorSectors(contractorSectors, sw);
+
+                sector.NW = nw;
+                sector.NE = ne;
+                sector.SE = se;
+                sector.SW = sw;
             }
 
-            var childCoordinateOffset = sector.Width() / 4;
-            var nw = _dbContext.Sectors.Add(new Sector{
-                Latitude = sector.Latitude + childCoordinateOffset,
-                Longitude = sector.Longitude - childCoordinateOffset,
-                Depth = sector.Depth + 1,
-                Parent = sectorId 
-            }).Entity;
-            var ne = _dbContext.Sectors.Add(new Sector{
-                Latitude = sector.Latitude + childCoordinateOffset,
-                Longitude = sector.Longitude + childCoordinateOffset,
-                Depth = sector.Depth + 1,
-                Parent = sectorId 
-            }).Entity;
-            var se = _dbContext.Sectors.Add(new Sector{
-                Latitude = sector.Latitude - childCoordinateOffset,
-                Longitude = sector.Longitude + childCoordinateOffset,
-                Depth = sector.Depth + 1,
-                Parent = sectorId 
-            }).Entity;
-            var sw = _dbContext.Sectors.Add(new Sector{
-                Latitude = sector.Latitude - childCoordinateOffset,
-                Longitude = sector.Longitude - childCoordinateOffset,
-                Depth = sector.Depth + 1,
-                Parent = sectorId 
-            }).Entity;
-            _dbContext.SaveChanges();
+            _dbContext.ContractorSectors.RemoveRange(associatedContractorSectors.SelectMany(cs => cs));    
+            return; 
 
-            sector.NW = nw.Id;
-            sector.NE = ne.Id;
-            sector.SE = se.Id;
-            sector.SW = sw.Id;
-
-            var contractorSectors = _dbContext.ContractorSectors
-            .Where(cs => cs.SectorId == sectorId)
-            .Include(cs => cs.Contractor)
-            .ToList();
-
-            foreach(var contractorSector in contractorSectors)
+            static List<ContractorSector> splitContractorSectors(List<ContractorSector> contractorSectors, Sector sector)
             {
-
-                var serviceArea = contractorSector.Contractor.ServiceArea;
-                if(serviceArea == null) 
-                { 
-                    continue; 
-                }
-                void addContractorSector(Sector childSector)
+                var newContractorSectors = new List<ContractorSector>();
+                foreach(var contractorSector in contractorSectors)
                 {
+                    var serviceArea = contractorSector.Contractor.ServiceArea!;
                     var addToSector = false;
                     var servesEntireSector = false;
                     if(contractorSector.ServesEntireSector)
@@ -172,31 +210,23 @@ namespace Jobber_Server.Services.Contractors.Sectors
                         addToSector = true;
                         servesEntireSector = true;
                     } else {
-                        if(serviceArea.ServesSector(childSector))
+                        if(serviceArea.ServesSector(sector))
                         {
                             addToSector = true;
-                            servesEntireSector = serviceArea.ServesEntireSector(childSector);
+                            servesEntireSector = serviceArea.ServesEntireSector(sector);
                         }
                     }
-   
                     if(addToSector)
                     {
-                        _dbContext.ContractorSectors.Add(new ContractorSector
+                        newContractorSectors.Add(new ContractorSector
                         {
                             ContractorId = contractorSector.ContractorId,
-                            SectorId = childSector.Id,
                             ServesEntireSector = servesEntireSector
                         });
                     }
                 }
-                addContractorSector(nw);
-                addContractorSector(ne);
-                addContractorSector(se);
-                addContractorSector(sw);
+                return newContractorSectors;
             }
-            _dbContext.SaveChanges();
-            _dbContext.ContractorSectors.RemoveRange(contractorSectors);     
-            _dbContext.SaveChanges();       
         }
     }
 }

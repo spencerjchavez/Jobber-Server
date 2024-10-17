@@ -31,11 +31,11 @@ namespace Jobber_Server.Controllers
                         "Test" + i,
                         "Test" + i,
                         ServiceArea: new ServiceArea {
-                            Latitude = (180 * random.NextDouble()) - 90,
-                            Longitude = (360 * random.NextDouble()) - 180,
+                            Latitude = 20 + random.NextDouble(),
+                            Longitude = 20 + random.NextDouble(),
                             //Latitude = 0 + random.NextDouble(),
                             //Longitude = -90 + random.NextDouble(),
-                            Radius = 50,
+                            Radius = 10 + 50 * random.NextDouble(),
                         }
                     ));
                 }

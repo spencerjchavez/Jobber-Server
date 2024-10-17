@@ -43,18 +43,18 @@ CREATE TABLE Sectors(
     Latitude DOUBLE NOT NULL,
     Longitude DOUBLE NOT NULL,
     Depth INT NOT NULL,
-    NW INT,
-    NE INT,
-    SE INT,
-    SW INT,
-    Parent INT,
-    FOREIGN KEY (NW) REFERENCES Sectors(Id) ON DELETE SET NULL,
-    FOREIGN KEY (NE) REFERENCES Sectors(Id) ON DELETE SET NULL,
-    FOREIGN KEY (SE) REFERENCES Sectors(Id) ON DELETE SET NULL,
-    FOREIGN KEY (SW) REFERENCES Sectors(Id) ON DELETE SET NULL,
-    FOREIGN KEY (Parent) REFERENCES Sectors(Id) ON DELETE RESTRICT
+    NWId INT,
+    NEId INT,
+    SEId INT,
+    SWId INT,
+    ParentId INT,
+    FOREIGN KEY (NWId) REFERENCES Sectors(Id) ON DELETE SET NULL,
+    FOREIGN KEY (NEId) REFERENCES Sectors(Id) ON DELETE SET NULL,
+    FOREIGN KEY (SEId) REFERENCES Sectors(Id) ON DELETE SET NULL,
+    FOREIGN KEY (SWId) REFERENCES Sectors(Id) ON DELETE SET NULL,
+    FOREIGN KEY (ParentId) REFERENCES Sectors(Id) ON DELETE RESTRICT
 );
-CREATE INDEX index_parent ON Sectors(Parent);
+CREATE INDEX index_parent ON Sectors(ParentId);
 
 INSERT INTO Sectors (Id, Latitude, Longitude, Depth) VALUES (1, 0, -90, 0);
 INSERT INTO Sectors (Id, Latitude, Longitude, Depth) VALUES (2, 0, 90, 0);
@@ -71,3 +71,4 @@ CREATE TABLE ContractorSectors(
 );
 CREATE INDEX index_sector ON ContractorSectors(SectorId);
 CREATE INDEX index_contractor ON ContractorSectors(ContractorId);
+CREATE INDEX index_serves_entire_sector ON ContractorSectors(ServesEntireSector);
