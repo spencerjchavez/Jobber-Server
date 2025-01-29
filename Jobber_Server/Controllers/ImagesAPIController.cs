@@ -9,9 +9,9 @@ namespace Jobber_Server.Controllers
     public class ImagesAPIController(): ControllerBase 
     {
         [HttpPost]
-        public ActionResult<ImagesDto> UploadImages([FromForm] UploadImagesDto dto)
+        public ActionResult<ICollection<ImageDto>> UploadImages([FromForm] UploadImagesDto dto)
         {
-            var toReturn = new ImagesDto();
+            var toReturn = new List<ImageDto>();
             foreach(IFormFile file in dto.Images )
             {
                 SaveImageFile sif = new SaveImageFile(file);
@@ -20,8 +20,10 @@ namespace Jobber_Server.Controllers
                     return BadRequest("Exception: " + sif.Error);
                 } else if(sif.ImageUri != null && sif.ImageThumbnailUri != null)
                 {
-                    toReturn.Images.Add(sif.ImageUri.ToString());
-                    toReturn.ImageThumbnails.Add(sif.ImageThumbnailUri.ToString());
+                    toReturn.Add(new ImageDto{
+                        Image = sif.ImageUri.ToString(),
+                        ImageThumbnail = sif.ImageThumbnailUri.ToString()
+                    });
                 }
             }
             return toReturn;

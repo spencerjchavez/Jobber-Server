@@ -54,6 +54,16 @@ namespace Jobber_Server
                     Description = "" 
                 });
             });
+
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(builder =>
+                {
+                    builder.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                });
+            });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -71,8 +81,8 @@ namespace Jobber_Server
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Jobber Server API V1");
             });
             
+            app.UseCors();
             app.UseRouting();
-
             app.UseStaticFiles(new StaticFileOptions
             {
                 FileProvider = new PhysicalFileProvider(

@@ -39,20 +39,20 @@ namespace Jobber_Server.Models.Contractors
 
         // TODO: May need to look into storing the ImageDto Id within the Contractor object and using a navigation property to pull in the images. 
         [NotMapped]
-        public ImagesDto? ProfilePicture { get; set; }
+        public ImageDto? ProfilePicture { get; set; }
         [Column("ProfilePicture")]
         public string? ProfilePictureJson
         {
             get => JsonSerializer.Serialize(ProfilePicture);
-            set => ProfilePicture = value == null ? null : JsonSerializer.Deserialize<ImagesDto>(value);
+            set => ProfilePicture = value == null ? null : JsonSerializer.Deserialize<ImageDto>(value);
         }
         [NotMapped]
-        public ICollection<ImagesDto>? Portfolio { get; set; }
+        public ICollection<ImageDto>? Portfolio { get; set; }
         [Column("Portfolio")]
         public string? PortfolioJson
         {
             get => JsonSerializer.Serialize(Portfolio);
-            set => Portfolio = value == null ? null : JsonSerializer.Deserialize<ICollection<ImagesDto>>(value);
+            set => Portfolio = value == null ? null : JsonSerializer.Deserialize<ICollection<ImageDto>>(value);
         }
 
         public virtual ICollection<ContractorSector> ContractorSectors { get; set; } = new HashSet<ContractorSector>();

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Jobber_Server.Models.Contractors;
 using Jobber_Server.Services.Contractors;
 using Jobber_Server.Models;
+using Jobber_Server.Models.Images;
 
 namespace Jobber_Server.Controllers 
 {
@@ -16,6 +17,7 @@ namespace Jobber_Server.Controllers
         [HttpPost("test")]
         public ActionResult Test()
         {
+            var exampleLogos = new List<string>{"http://127.0.0.1:5253/Assets/Images/fd249b25-aa47-40ee-bbec-6fbaf2363dee.png", "http://127.0.0.1:5253/Assets/Images/6fce3708-35ba-401a-9c95-219d3e49fd81.jpg", "http://127.0.0.1:5253/Assets/Images/6b4df110-c476-4476-a700-a5929ff0fa87.jpg", "http://127.0.0.1:5253/Assets/Images/14e8e666-adf5-4041-b569-cbd100e2f27a.jpg"};
             var random = new Random(0);
             Console.WriteLine("Starting Test");
             var chunkTimes = new List<double>();
@@ -27,15 +29,17 @@ namespace Jobber_Server.Controllers
                 for(var i = 0; i < chunkSize; i++)
                 {
                     CreateContractor(new CreateContractorDto(
-                        new Guid(),
+                        Guid.NewGuid(),
                         "Test" + i,
                         "Test" + i,
                         ServiceArea: new ServiceArea {
-                            Latitude = (180 * random.NextDouble()) - 90,
-                            Longitude = (360 * random.NextDouble()) - 180,
-                            //Latitude = 0 + random.NextDouble(),
-                            //Longitude = -90 + random.NextDouble(),
-                            Radius = 50,
+                            Latitude = 40.0938 + 2 * random.NextDouble(),
+                            Longitude = -112.4585 + 2 * random.NextDouble(),
+                            Radius = 10 + 50 * random.NextDouble(),
+                        },
+                        ProfilePicture: new ImageDto{
+                            Image = exampleLogos[(int) (random.NextDouble() * exampleLogos.Count)],
+                            ImageThumbnail = exampleLogos[(int) (random.NextDouble() * exampleLogos.Count)],
                         }
                     ));
                 }
@@ -75,10 +79,12 @@ namespace Jobber_Server.Controllers
         }
 
         [HttpPost("page/{page?}")]
-        public ActionResult<ICollection<ContractorDto>> GetContractors(double latitude, double longitude, [FromBody] int[] jobCategories, int page=0)
+        public ActionResult<ICollection<ContractorDto>> GetContractors(double latitude, double longitude, [FromBody] int[]? jobCategories=null, int page=0)
         {
-            return Ok(_service.GetContractors(latitude, longitude, jobCategories));
+            return Ok(_service.GetContractors(latitude, longitude, jobCategories ?? []));
         }
+
+        // TODO: Add GetContractors() endpoint to get all contractors whose location is within a circle. Params will be latitude, longitude, radius, jobCategories, pages.
 
         [HttpPut]
         public ActionResult UpdateContractor(UpdateContractorDto contractorUpdated) 

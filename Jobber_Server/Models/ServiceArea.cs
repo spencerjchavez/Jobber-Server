@@ -5,7 +5,7 @@ namespace Jobber_Server.Models {
     {
         public double Latitude { get; set; }
         public double Longitude { get; set; }
-        public double Radius { get; set; }
+        public double Radius { get; set; } //km
 
         public bool Contains(double latitude, double longitude)
         {

@@ -62,7 +62,7 @@ namespace Jobber_Server.Services.Contractors
             return contractor.ToDto();
         }
 
-        // TODO: put limits on radius and implement pagination of results to ease server resources
+        // TODO: put limits on radius of results and implement pagination of results to ease server resources
         // TODO: check jobCategory filter
         public ICollection<ContractorDto> GetContractors(double latitude, double longitude, int[] jobCategories)
         {
