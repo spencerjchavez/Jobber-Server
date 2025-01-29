@@ -131,7 +131,11 @@ namespace Jobber_Server.Services.Contractors.Sectors
                 var isSouth = latitude < sector.Latitude;
                 var childSector = isWest ? (isSouth ? sector.SW! : sector.NW!) : (isSouth ? sector.SE! : sector.NE!);
                 sector = _dbContext.Sectors
-                    .Where(s => s.Id == childSector.Id) // do includes for child sectors
+                    .Where(s => s.Id == childSector.Id)
+                    .Include(s => s.NE)
+                    .Include(s => s.NW)
+                    .Include(s => s.SE)
+                    .Include(s => s.SW)
                     .FirstOrDefault() ?? throw new Exception($"Couldn't find sector of id {childSector.Id}");
             }
 
