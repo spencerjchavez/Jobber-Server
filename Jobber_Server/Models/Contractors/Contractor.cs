@@ -15,6 +15,7 @@ namespace Jobber_Server.Models.Contractors
         public Guid Guid { get; set; }
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
+        public string DisplayName {get; set; } = string.Empty;
         public string? BioShort { get; set; }
         public string? BioLong { get; set; }
         public virtual ICollection<ContractorJobCategory> ContractorJobCategories { get; set; } = new HashSet<ContractorJobCategory>();

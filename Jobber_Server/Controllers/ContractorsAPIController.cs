@@ -21,7 +21,7 @@ namespace Jobber_Server.Controllers
             var random = new Random(0);
             Console.WriteLine("Starting Test");
             var chunkTimes = new List<double>();
-            var chunkSize = 200;
+            var chunkSize = 100;
             var start = DateTime.Now;
             for(var chunk = 0; chunk < 100; chunk++)
             {
@@ -33,8 +33,8 @@ namespace Jobber_Server.Controllers
                         "Test" + i,
                         "Test" + i,
                         ServiceArea: new ServiceArea {
-                            Latitude = 40.0938 + 2 * random.NextDouble(),
-                            Longitude = -112.4585 + 2 * random.NextDouble(),
+                            Latitude = 40.0938 + 10 * random.NextDouble(),
+                            Longitude = -112.4585 + 10 * random.NextDouble(),
                             Radius = 10 + 50 * random.NextDouble(),
                         },
                         ProfilePicture: new ImageDto{
@@ -79,9 +79,11 @@ namespace Jobber_Server.Controllers
         }
 
         [HttpPost("page/{page?}")]
-        public ActionResult<ICollection<ContractorDto>> GetContractors(double latitude, double longitude, [FromBody] int[]? jobCategories=null, int page=0)
+        public ActionResult<ICollection<ContractorDto>> GetContractors(double latitude, double longitude, double radius=0, [FromBody] int[]? jobCategories=null, int page=0)
         {
-            return Ok(_service.GetContractors(latitude, longitude, jobCategories ?? []));
+            if (radius > 180) return BadRequest("Radius must be <= 180 km"); // This is to prevent SQL IN statements having a list of more than 100 sectors.
+            var contractors = _service.GetContractors(latitude, longitude, radius, jobCategories ?? []);
+            return Ok(contractors);
         }
 
         // TODO: Add GetContractors() endpoint to get all contractors whose location is within a circle. Params will be latitude, longitude, radius, jobCategories, pages.

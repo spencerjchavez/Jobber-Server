@@ -22,7 +22,7 @@ namespace Jobber_Server.Models.Contractors.Sector
 
         public virtual ICollection<ContractorSector> ContractorSectors { get; set; } = null!;
 
-        public double Width() => 180.0 / Math.Pow(2, Depth);
+        public double Width() => 180.0 / Math.Pow(2, Depth); // in degrees
         
         public bool HasChildren() => NEId != null;
         public double LatitudeNorth() => Latitude + Width() / 2; 
