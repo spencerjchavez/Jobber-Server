@@ -3,6 +3,8 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Jobber_Server.Models.Contractors.ContactInfos;
+using Jobber_Server.Models.Contractors.OperatingHours;
 using Jobber_Server.Models.Contractors.Sector;
 using Jobber_Server.Models.Images;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
@@ -15,8 +17,24 @@ namespace Jobber_Server.Models.Contractors
         public Guid Guid { get; set; }
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
+        public string DisplayName {get; set; } = string.Empty;
         public string? BioShort { get; set; }
-        public string? BioLong { get; set; }
+        [NotMapped]
+        public ICollection<ContactInfo>? ContactInfos { get; set; }
+        [Column("ContactInfo")]
+        public string? ContactInfosJson
+        {
+            get =>  JsonSerializer.Serialize(ContactInfos);
+            set => ContactInfos = value == null ? null : JsonSerializer.Deserialize<ICollection<ContactInfo>>(value);
+        } 
+        [NotMapped]
+        public OperatingHoursWeek? OperatingHours { get; set; }
+        [Column("OperatingHours")]
+        public string? OperatingHoursJson
+        {
+            get =>  JsonSerializer.Serialize(OperatingHours);
+            set => OperatingHours = value == null ? null : JsonSerializer.Deserialize<OperatingHoursWeek>(value);
+        } 
         public virtual ICollection<ContractorJobCategory> ContractorJobCategories { get; set; } = new HashSet<ContractorJobCategory>();
         [NotMapped]
         public ICollection<string>? Services { get; set; }

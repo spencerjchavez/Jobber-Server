@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using Jobber_Server.Models.Contractors.ContactInfos;
+using Jobber_Server.Models.Contractors.OperatingHours;
 using Jobber_Server.Models.Images;
 
 namespace Jobber_Server.Models.Contractors
@@ -9,7 +11,8 @@ namespace Jobber_Server.Models.Contractors
         string FirstName,
         string LastName,
         string? BioShort = null,
-        string? BioLong = null,
+        ICollection<ContactInfo>? ContactInfos = null,
+        OperatingHoursWeek? OperatingHours = null,
         ICollection<JobCategory>? JobCategories = null,
         ICollection<string>? Services = null,
         ServiceArea? ServiceArea = null,
@@ -32,8 +35,8 @@ namespace Jobber_Server.Models.Contractors
         [StringLength(255, ErrorMessage = "Short bio cannot exceed 255 characters.")]
         string? BioShort = null,
 
-        [StringLength(65535, ErrorMessage = "Long bio cannot exceed 65,535 characters.")]
-        string? BioLong = null,
+        ICollection<ContactInfo>? ContactInfos = null,
+        OperatingHoursWeek? OperatingHours = null,
         ICollection<int>? JobCategoryIds = null,
         ICollection<string>? Services = null,
         ServiceArea? ServiceArea = null,
@@ -57,14 +60,14 @@ namespace Jobber_Server.Models.Contractors
         [StringLength(255, ErrorMessage = "Short bio cannot exceed 255 characters.")]
         string? BioShort,
 
-        [StringLength(65535, ErrorMessage = "Long bio cannot exceed 65,535 characters.")]
-        string? BioLong,
+        ICollection<ContactInfo>? ContactInfos = null,
+        OperatingHoursWeek? OperatingHours = null,
 
-        ICollection<int>? JobCategoryIds,
-        ICollection<string>? Services,
+        ICollection<int>? JobCategoryIds = null,
+        ICollection<string>? Services = null,
 
-        ServiceArea? ServiceArea,
-        ImageDto? ProfilePicture,
-        ICollection<ImageDto>? Portfolio
+        ServiceArea? ServiceArea = null,
+        ImageDto? ProfilePicture = null,
+        ICollection<ImageDto>? Portfolio = null
     );
 }

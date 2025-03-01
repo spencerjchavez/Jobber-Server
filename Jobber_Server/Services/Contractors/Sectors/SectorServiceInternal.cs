@@ -114,33 +114,96 @@ namespace Jobber_Server.Services.Contractors.Sectors
             _dbContext.SaveChanges();
         }
 
-        public ICollection<Contractor> GetContractors(double latitude, double longitude)
+        // Gets all contractors whose service area intersects a sector that intersects the cirle described by the parameters. 
+        // These contractors' service areas may not actually intersect the circle described by the parameters.
+        public ICollection<Contractor> GetContractors(double latitude, double longitude, double radius)
         {
-            var sector = _dbContext.Sectors
-                .Where(s => s.Id == (longitude < 0 ? 1 : 2))
-                .Include(s => s.NE)
-                .Include(s => s.NW)
-                .Include(s => s.SE)
-                .Include(s => s.SW)
-                .FirstOrDefault() ?? throw new Exception("Couldn't get head sector");
-            
-            // TODO: Change this
-            while (sector.HasChildren())
+            var circle = new ServiceArea
             {
-                var isWest = longitude < sector.Longitude;
-                var isSouth = latitude < sector.Latitude;
-                var childSector = isWest ? (isSouth ? sector.SW! : sector.NW!) : (isSouth ? sector.SE! : sector.NE!);
-                sector = _dbContext.Sectors
+                Latitude=latitude,
+                Longitude=longitude,
+                Radius=radius
+            };
+
+            ICollection<int> GetSectorsInCircleRecursive(Sector sector)
+            {
+                if (!circle.Intersects(sector)) return [];
+                if (!sector.HasChildren()) return [sector.Id];
+
+                var numCornersInCircle = 0;
+                if(circle.Contains(sector.LatitudeNorth(), sector.LongitudeWest())) numCornersInCircle++;
+                if(circle.Contains(sector.LatitudeNorth(), sector.LongitudeEast())) numCornersInCircle++;
+                if(circle.Contains(sector.LatitudeSouth(), sector.LongitudeWest())) numCornersInCircle++;
+                if(circle.Contains(sector.LatitudeSouth(), sector.LongitudeEast())) numCornersInCircle++;                
+                if (numCornersInCircle == 4) // no need to check bounds of children, just return all leaf nodes
+                {
+                    var sectorsToDrill = new Stack<Sector>([sector]);
+                    var childSectorIdsToReturn = new List<int>();
+                    while (sectorsToDrill.Count > 0)
+                    {
+                        var toDrill = sectorsToDrill.Pop();
+                        var children = _dbContext.Sectors
+                            .Where(s => s.ParentId == toDrill.Id)
+                            .Include(s => s.NE)
+                            .Include(s => s.NW)
+                            .Include(s => s.SE)
+                            .Include(s => s.SW)
+                            .ToList() ?? throw new Exception($"Couldn't find children of sector id {toDrill.Id}");
+                        children.ForEach((child) => {
+                            if (child.HasChildren())
+                            {
+                                sectorsToDrill.Push(child);
+                            } else {
+                                childSectorIdsToReturn.Add(child.Id);
+                            }
+                        });
+                    }
+                    return childSectorIdsToReturn;
+                }
+                
+                var childSectorIds = new List<int>();
+                foreach (var childSector in new List<Sector>([sector.NE!, sector.NW!, sector.SE!, sector.SW!]))
+                {
+                    childSectorIds.AddRange(GetSectorsInCircleRecursive(_dbContext.Sectors
                     .Where(s => s.Id == childSector.Id)
                     .Include(s => s.NE)
                     .Include(s => s.NW)
                     .Include(s => s.SE)
                     .Include(s => s.SW)
-                    .FirstOrDefault() ?? throw new Exception($"Couldn't find sector of id {childSector.Id}");
+                    .FirstOrDefault() ?? throw new Exception($"Couldn't find sector of id {childSector.Id}")));
+                }
+                return childSectorIds;
+            }
+
+
+            radius = radius / 6378 * 180 / Math.PI; // change radius to degrees instead of km.
+            
+            var sectorIdsInCircle = new List<int>();
+            if (longitude - radius < 0)
+            {
+                var sector = _dbContext.Sectors
+                    .Where(s => s.Id == 1)
+                    .Include(s => s.NE)
+                    .Include(s => s.NW)
+                    .Include(s => s.SE)
+                    .Include(s => s.SW)
+                    .FirstOrDefault() ?? throw new Exception("Couldn't get head sector");
+                sectorIdsInCircle.AddRange(GetSectorsInCircleRecursive(sector));
+            }
+            if (longitude + radius > 0)
+            {
+                var sector = _dbContext.Sectors
+                    .Where(s => s.Id == 2)
+                    .Include(s => s.NE)
+                    .Include(s => s.NW)
+                    .Include(s => s.SE)
+                    .Include(s => s.SW)
+                    .FirstOrDefault() ?? throw new Exception("Couldn't get head sector");
+                    sectorIdsInCircle.AddRange(GetSectorsInCircleRecursive(sector));
             }
 
             var contractorSectors = _dbContext.ContractorSectors
-                .Where(cs => cs.SectorId == sector.Id)
+                .Where(cs => sectorIdsInCircle.Contains(cs.SectorId))
                 .Include(cs => cs.Contractor)
                 .ToList() ?? new List<ContractorSector>();
 
@@ -156,7 +219,7 @@ namespace Jobber_Server.Services.Contractors.Sectors
                 var sector = sectors[i];
                 var contractorSectors = associatedContractorSectors[i];
                 
-                if(sector.Depth > 11) // ensures we don't split a sector whose width < 5km
+                if(sector.Depth > 9) // ensures we don't split a sector whose width < 20km. This helps limit maximum recursion depths and limit the number of contractors returned from each GET.
                 {
                     continue;
                 }
