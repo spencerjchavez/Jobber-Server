@@ -27,7 +27,8 @@ namespace Jobber_Server.Services.Contractors
                 FirstName = contractor.FirstName,
                 LastName = contractor.LastName,
                 BioShort = contractor.BioShort,
-                BioLong = contractor.BioLong,
+                OperatingHours = contractor.OperatingHours,
+                ContactInfos = contractor.ContactInfos,
                 ContractorJobCategories = contractor.JobCategoryIds?.Select(jobCategoryId => 
                 {
                     if(!jobCategoryIds.Add(jobCategoryId)) // ensure no duplicate jobCategory Ids
@@ -102,7 +103,8 @@ namespace Jobber_Server.Services.Contractors
             }
 
             contractor.BioShort = contractorUpdated.BioShort;
-            contractor.BioLong = contractorUpdated.BioLong;
+            contractor.ContactInfos = contractorUpdated.ContactInfos;
+            contractor.OperatingHours = contractorUpdated.OperatingHours;
             contractor.ContractorJobCategories = contractorJobCategories;
             contractor.ProfilePicture = contractorUpdated.ProfilePicture;
             contractor.Portfolio = contractorUpdated.Portfolio;
