@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Jobber_Server.DBContext;
 using Jobber_Server.Exceptions;
 using Jobber_Server.Models;
@@ -26,7 +27,8 @@ namespace Jobber_Server.Services.Contractors
                 FirstName = contractor.FirstName,
                 LastName = contractor.LastName,
                 BioShort = contractor.BioShort,
-                BioLong = contractor.BioLong,
+                OperatingHours = contractor.OperatingHours,
+                ContactInfos = contractor.ContactInfos,
                 ContractorJobCategories = contractor.JobCategoryIds?.Select(jobCategoryId => 
                 {
                     if(!jobCategoryIds.Add(jobCategoryId)) // ensure no duplicate jobCategory Ids
@@ -64,12 +66,12 @@ namespace Jobber_Server.Services.Contractors
 
         // TODO: put limits on radius of results and implement pagination of results to ease server resources
         // TODO: check jobCategory filter
-        public ICollection<ContractorDto> GetContractors(double latitude, double longitude, int[] jobCategories)
+        public ICollection<ContractorDto> GetContractors(double latitude, double longitude, double radius, int[] jobCategories)
         {
-            var contractors = _sectorService.GetContractors(latitude, longitude);
+            var contractors = _sectorService.GetContractors(latitude, longitude, radius);
             contractors = contractors.Where(contractor => {
                 if(contractor.ServiceArea == null) return false;
-                return contractor.ServiceArea.Contains(latitude, longitude);
+                return contractor.ServiceArea.Intersects(latitude, longitude, radius);
             }).ToList() ?? new List<Contractor>();
             var contractorDtos = contractors.Select(c => c.ToDto()).ToList();
             return contractorDtos;
@@ -101,7 +103,8 @@ namespace Jobber_Server.Services.Contractors
             }
 
             contractor.BioShort = contractorUpdated.BioShort;
-            contractor.BioLong = contractorUpdated.BioLong;
+            contractor.ContactInfos = contractorUpdated.ContactInfos;
+            contractor.OperatingHours = contractorUpdated.OperatingHours;
             contractor.ContractorJobCategories = contractorJobCategories;
             contractor.ProfilePicture = contractorUpdated.ProfilePicture;
             contractor.Portfolio = contractorUpdated.Portfolio;
